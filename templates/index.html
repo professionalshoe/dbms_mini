@@ -1,0 +1,33 @@
+<html>
+    <head>
+    <title>Game viewer</title>
+    </html>
+    <body>
+        <h1>Enter Chess.com Username:</h1>
+        <form id="chessusername" action='/fetch' method="post">
+            <input type="text" name="username" placeholder="ex:Anugun22" required>
+            <button type="submit">Enter</button>
+        </form>
+
+        {% if games %}
+            <ul id="games">
+                {% for game in games %}
+                    <li>
+                        <strong>White:</strong> {{ game.white.username }}<br>
+                        <strong>Black:</strong> {{ game.black.username }}<br>
+                        <strong>Result:</strong> {{ game.white.result }} {{game.black.result}}<br>
+                        <strong>URL:</strong> <a href="{{ game.url }}">View Game</a>
+                    </li>
+                {% endfor %}
+            </ul>
+        {% else %}
+            <p>No games found for user</p>
+        {% endif %}
+
+
+        {% if error %}
+            <h2 style="color:red;">ERROR</h2>
+            <p>{{error}}</p>
+        {% endif %}
+    </body>
+</html>
