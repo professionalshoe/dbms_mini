@@ -39,5 +39,8 @@
         <h2 class="success">SUCCESS</h2>
         <p>{{ success }}</p>
         {% endif %}
+        <form action="{{ url_for('logout') }}" method="get">
+            <button type="submit">Logout</button>
+        </form>
     </body>
 </html>
