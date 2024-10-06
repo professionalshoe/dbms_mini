@@ -1,4 +1,4 @@
-from flask import Flask, request, render_template, redirect, url_for, session, flash
+from flask import Flask, request, render_template, redirect, url_for, session, flash,jsonify
 import requests, mysql.connector, json
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -6,7 +6,7 @@ app = Flask(__name__)
 app.secret_key = 'your_secret_key'  # Change this to a random secret key
 
 def create_db_connection():
-    connection = mysql.connector.connect(host='localhost', user='root', password='qwerty123', database='chess_analyzer')
+    connection = mysql.connector.connect(host='localhost', user='root', password='priyanshu', database='chess_analyzer')
     return connection
 
 @app.route('/')
@@ -28,7 +28,7 @@ def login():
         user = cursor.fetchone()
         
         if user and check_password_hash(user['password'], password):
-            session['user_id'] = user['id']
+            session['user_id'] = user['player_id']
             session['username'] = user['username']
             flash('Logged in successfully!', 'success')
             return redirect(url_for('index'))
@@ -52,8 +52,18 @@ def register():
         hashed_password = generate_password_hash(password)
         
         try:
+            # Insert the new user into the 'users' table
             cursor.execute("INSERT INTO users (username, password) VALUES (%s, %s)", (username, hashed_password))
             connection.commit()
+
+            # Get the player_id of the newly inserted user
+            player_id = cursor.lastrowid  # This retrieves the auto-incremented player_id
+            
+            # Insert a new row into the 'win_log' table for this user with default values
+            cursor.execute("INSERT INTO win_log (player_id, white_win, black_win, no_of_draws) VALUES (%s, %s, %s, %s)", 
+                           (player_id, 0, 0, 0))
+            connection.commit()
+
             flash('Registration successful! Please log in.', 'success')
             return redirect(url_for('login'))
         except mysql.connector.IntegrityError:
@@ -101,24 +111,48 @@ def save_game():
     if 'user_id' not in session:
         return redirect(url_for('login'))
     game_data = request.form.get('game_data')
-    username = request.form.get('username')
-    game = json.loads(game_data)
+    print(game_data)
+    print(f"Game Data: {game_data}",type(game_data),len(game_data))  # Debugging line
+
+    if not game_data:
+        return render_template('index.html', error="No game data received.")
+    
+    try:
+        # Convert JSON string back to a Python dictionary
+        game = json.loads(game_data)
+    except json.JSONDecodeError as err:
+        return render_template('index.html', error=f"Error parsing game data.{err}")
+    
     game_pgn = game['pgn']
     game_white = game['white']['username']
     game_black = game['black']['username']
+    game_id=game['url']
     
     connection = create_db_connection()
     cursor = connection.cursor()
 
-    insert_query = "INSERT INTO games (user_id, chess_com_game_id, white_player, black_player, pgn) VALUES (%s, %s, %s, %s, %s)"
-    values = (session['user_id'], game['url'], game_white, game_black, game_pgn)
 
     try:
-        cursor.execute(insert_query, values)
+        insert_game_data_query = """
+            INSERT INTO game_data (game_id, white_player, black_player, white_result, black_result, moves)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """
+        values_game_data = (game_id, game_white, game_black, game['white']['result'], game['black']['result'], game_pgn)
+        cursor.execute(insert_game_data_query, values_game_data)
+
+        insert_saved_game_query = """
+            INSERT INTO saved_games (player_id, chess_com_game_id)
+            VALUES (%s, %s)
+        """
+        values_saved_game = (session['user_id'], game_id)
+        cursor.execute(insert_saved_game_query, values_saved_game)
+
         connection.commit()
-        return render_template('index.html', success="Game saved successfully", username=username)
+        return render_template('index.html', success="Game saved successfully")
+    except mysql.connector.IntegrityError:
+            return render_template('index.html', message="game already exists") 
     except mysql.connector.Error as err:
-        return render_template('index.html', error=f"Error saving game: {err}", username=username)
+        return render_template('index.html', error=f"Error saving game: {err}")
     finally:
         cursor.close()
         connection.close()

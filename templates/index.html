@@ -4,7 +4,7 @@
     </html>
     <body>
         <h1>Enter Chess.com Username:</h1>
-        <form id="chessusername" action='/fetch' method="post">
+        <form id="chessusername" action='/fetch' method="post" >
             <input type="text" name="username" placeholder="ex:Anugun22" required>
             <button type="submit">Enter</button>
             <button type="reset">Reset</button>
@@ -19,9 +19,9 @@
                         <strong>Black:</strong> {{ game.black.username }}<br>
                         <strong>Result:</strong> {{ game.white.result }} {{game.black.result}}<br>
                         <strong>URL:</strong> <a href="{{ game.url }}">View Game</a>
+                        
                         <form action="/save_game" method="post" style="display:inline;">
-                            <input type="hidden" name="game_data" value="{{game|tojson}}">
-                            <input type="hidden" name="username" value="{{usrname}}">
+                            <input type="hidden" name="game_data" value='{{ game | tojson | safe }}'>
                             <button type="submit">Save Game</button>
                         </form>
                     </li>
@@ -39,6 +39,12 @@
         <h2 class="success">SUCCESS</h2>
         <p>{{ success }}</p>
         {% endif %}
+
+        {% if message %}
+        <h2 class="message">message</h2>
+        <p>{{ message }}</p>
+        {% endif %}
+
         <form action="{{ url_for('logout') }}" method="get">
             <button type="submit">Logout</button>
         </form>
