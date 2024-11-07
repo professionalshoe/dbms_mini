@@ -20,7 +20,8 @@ CREATE TABLE win_log (
 
 -- Create the 'game_data' table
 CREATE TABLE game_data (
-    game_id VARCHAR(50) PRIMARY KEY,
+	id int AUTO_INCREMENT PRIMARY KEY,
+    game_id VARCHAR(50) unique,
     white_player VARCHAR(50),
     black_player VARCHAR(50),
     white_result VARCHAR(20),
@@ -39,3 +40,21 @@ CREATE TABLE saved_games (
 
 -- Display the tables
 SHOW TABLES;
+
+use chess_analyzer;
+DELIMITER //
+
+CREATE TRIGGER delete_game_data
+BEFORE DELETE ON game_data
+FOR EACH ROW
+BEGIN
+    -- Temporarily disable foreign key checks
+    SET FOREIGN_KEY_CHECKS = 0;
+
+    -- Delete the related record in saved_games
+	DELETE FROM saved_games WHERE chess_com_game_id = (SELECT game_id FROM game_data WHERE id = OLD.id);
+    -- Re-enable foreign key checks
+    SET FOREIGN_KEY_CHECKS = 1;
+END//
+
+DELIMITER ;

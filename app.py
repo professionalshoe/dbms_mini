@@ -16,7 +16,7 @@ def extract_termination(pgn):
 app.jinja_env.filters['extract_termination'] = extract_termination
 
 def create_db_connection():
-    connection = mysql.connector.connect(host='localhost', user='root', password='qwerty123', database='chess_analyzer')
+    connection = mysql.connector.connect(host='localhost', user='root', password='priyanshu', database='chess_analyzer')
     return connection
 
 @app.route('/')
@@ -208,10 +208,7 @@ def delete_game():
         cursor = connection.cursor()
         
         try:
-            # Delete from saved_games table
-            cursor.execute("DELETE FROM saved_games WHERE chess_com_game_id = (SELECT game_id FROM game_data WHERE id = %s)", (game_id,))
             
-            # Delete from game_data table
             cursor.execute("DELETE FROM game_data WHERE id = %s", (game_id,))
             
             connection.commit()
