@@ -97,6 +97,7 @@
                     <p><strong>White:</strong> {{ game.white.username }} ({{ game.white.rating }})</p>
                     <p><strong>Black:</strong> {{ game.black.username }} ({{ game.black.rating }})</p>
                     <p><strong>Result:</strong> {{ game.pgn | extract_termination }}</p>
+                    <p><strong>Game_link:</strong><a href={{game.url}}>CLICK ME</a></p>
                     <form action="{{ url_for('save_game') }}" method="post">
                         <input type="hidden" name="game_data" value="{{ game | tojson | forceescape }}">
                         <button type="submit">Save Game</button>
