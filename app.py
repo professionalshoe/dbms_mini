@@ -136,7 +136,8 @@ def save_game():
     game_white = game.get('white', {}).get('username', '')
     game_black = game.get('black', {}).get('username', '')
     game_id = game.get('url', '')
-    
+    game_white_result=game.get('white',{}).get('result',{})
+    game_black_result=game.get('black',{}).get('result',{})
     connection = create_db_connection()
     cursor = connection.cursor()
 
@@ -161,7 +162,27 @@ def save_game():
         """
         values_saved_game = (session['user_id'], game_id)
         cursor.execute(insert_saved_game_query, values_saved_game)
-
+        if(game_white_result=="win"):
+            insert_winlog_query="""
+                update win_log
+                set white_win=white_win+1
+                where player_id=(select player_id from users where username=%s)
+            """
+            cursor.execute(insert_winlog_query,(session['username'],))
+        elif(game_black_result=="win"):
+            insert_winlog_query="""
+                update win_log
+                set black_win=black_win+1
+                where player_id=(select player_id from users where username=%s)
+            """
+            cursor.execute(insert_winlog_query,(session['username'],))
+        elif(game_black_result=="agreed" or game_black_result=="repetition" or game_black_result=="timevsinsufficient" or game_black_result=="stalemate"):
+            insert_winlog_query="""
+                update win_log
+                set no_of_draws=no_of_draws+1
+                where player_id=(select player_id from users where username=%s)
+            """
+            cursor.execute(insert_winlog_query,(session['username'],))
         connection.commit()
         return render_template('view_games.html', success="Game saved successfully")
     except mysql.connector.IntegrityError:
@@ -222,6 +243,36 @@ def delete_game():
         return redirect(url_for('saved_games'))
     
     return render_template('delete_game.html')
+
+
+
+
+
+@app.route('/view_stats')
+def view_stats():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+    
+    connection = create_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    
+    try:
+        # Fetch all users and their current stats from win_log
+        query = """
+            SELECT u.username, u.player_id, w.white_win, w.black_win, w.no_of_draws 
+            FROM users u 
+            JOIN win_log w ON u.player_id = w.player_id
+        """
+        cursor.execute(query)
+        user_stats = cursor.fetchall()
+        return render_template('view_stats.html', user_stats=user_stats)
+    except mysql.connector.Error as err:
+        flash(f'Error fetching statistics: {err}', 'error')
+        return redirect(url_for('index'))
+    finally:
+        cursor.close()
+        connection.close()
+
 
 if __name__ == '__main__':
     app.run(debug=True)

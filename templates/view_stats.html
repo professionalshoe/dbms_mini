@@ -1,0 +1,70 @@
+
+<!-- templates/view_stats.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <title>User Statistics</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        th {
+            background-color: #f5f5f5;
+        }
+        .update-btn {
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .update-btn:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <h1>User Statistics</h1>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="{{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <table>
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Games as White Won</th>
+                <th>Games as Black Won</th>
+                <th>Draws</th>
+                <th>Total Games</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for stat in user_stats %}
+                <tr>
+                    <td>{{ stat.username }}</td>
+                    <td>{{ stat.white_win }}</td>
+                    <td>{{ stat.black_win }}</td>
+                    <td>{{ stat.no_of_draws }}</td>
+                    <td>{{ stat.white_win + stat.black_win + stat.no_of_draws }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    
+    <a href="{{ url_for('index') }}">Back to Home</a>
+</body>
+</html>
